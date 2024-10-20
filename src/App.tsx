@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useMemo } from "react";
 import { Calendar } from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import { DateTime } from "luxon";
+import { createReservation, fetchReservationsAndBlockedDates } from "./api";
 
 const timeSlots = [
   "10:00",
@@ -26,6 +27,7 @@ function App() {
   const [currentPage, setCurrentPage] = useState(0);
   const [communicationConsent, setCommunicationConsent] = useState(false);
   const [name, setName] = useState("");
+  const [numberOfGuests, setNumberOfGuests] = useState("");
   const [email, setEmail] = useState("");
   const [tel, setTel] = useState("");
   const [allergy, setAllergy] = useState("");
@@ -33,6 +35,52 @@ function App() {
   const timesPerPage = 6;
   const formRef = useRef<HTMLFormElement | null>(null);
   const timesRef = useRef<HTMLDivElement | null>(null);
+  const [blockedDays, setBlockedDays] = useState<DateTime[]>([]);
+  const [addedDays, setAddedDays] = useState<DateTime[]>([]);
+
+  const [numGuestWarning, setNumGuestWarning] = useState<string | null>(null);
+  useEffect(() => {
+    if (parseInt(numberOfGuests) > 4) {
+      setNumGuestWarning(
+        "If you have more than 4 guests, please contact us directly on Instagram. / 4人以上のご予約はお断りさせていただいております。"
+      );
+    } else {
+      setNumGuestWarning(null);
+    }
+  }, [numberOfGuests]);
+
+  useEffect(() => {
+    const newBookedTimeSlots: Record<string, string[]> = {};
+
+    fetchReservationsAndBlockedDates().then((data) => {
+      data.reservations.forEach((reservation) => {
+        if (
+          !newBookedTimeSlots[
+            reservation.reservation_date.toFormat("yyyy-MM-dd")
+          ]
+        ) {
+          newBookedTimeSlots[
+            reservation.reservation_date.toFormat("yyyy-MM-dd")
+          ] = [];
+        }
+
+        newBookedTimeSlots[
+          reservation.reservation_date.toFormat("yyyy-MM-dd")
+        ].push(reservation.reservation_time.toFormat("HH:mm"));
+      });
+
+      setBookedTimeSlots((existing) => ({
+        ...existing,
+        ...newBookedTimeSlots,
+      }));
+
+      setBlockedDays(
+        data.blockedDays.map((blockedDay) => blockedDay.block_date)
+      );
+
+      setAddedDays(data.addedDays.map((addedDay) => addedDay.added_date));
+    });
+  }, []);
 
   const submitDisabled = useMemo(
     () => !communicationConsent || !name || !email || !tel,
@@ -49,16 +97,21 @@ function App() {
   // Function to determine if a date should be disabled
   const disableDates = ({ date }: { date: Date }) => {
     const luxonDate = DateTime.fromJSDate(date);
-    // Disable Sundays (7), Mondays (1), and Tuesdays (2)
+
+    if (addedDays.find((addedDay) => addedDay.hasSame(luxonDate, "day"))) {
+      return false;
+    }
+
     return (
       luxonDate.weekday === 7 ||
       luxonDate.weekday === 1 ||
       luxonDate.weekday === 2 ||
-      luxonDate < DateTime.now()
+      luxonDate < DateTime.now() ||
+      blockedDays.find((blockedDay) => blockedDay.hasSame(luxonDate, "day"))
     );
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (selectedTime && date) {
       setBookedTimeSlots({
@@ -67,6 +120,18 @@ function App() {
           ...(bookedTimeSlots[date.toFormat("yyyy-MM-dd")] || []),
           selectedTime,
         ],
+      });
+
+      await createReservation({
+        customer_name: name,
+        customer_email: email,
+        customer_phone: tel,
+        reservation_date: date.toFormat("yyyy-MM-dd"),
+        reservation_time: selectedTime,
+        number_of_guests: parseInt(numberOfGuests),
+        communication_consent: communicationConsent,
+        special_requests: other,
+        allergy: allergy,
       });
 
       // Create a toast notification
@@ -104,6 +169,7 @@ function App() {
       setTel("");
       setAllergy("");
       setOther("");
+      setNumberOfGuests("");
     }
   };
 
@@ -177,7 +243,13 @@ function App() {
                     ? "not-allowed"
                     : "pointer",
                   backgroundColor:
-                    selectedTime === time ? "#d0d0d0" : "transparent",
+                    selectedTime === time
+                      ? "#a0a0a0"
+                      : bookedTimeSlots[date.toFormat("yyyy-MM-dd")]?.includes(
+                          time
+                        )
+                      ? "#c0c0c0" // Background color for disabled slot
+                      : "transparent",
                   border: "1px solid #ccc",
                   borderRadius: "4px",
                   margin: "5px 0",
@@ -230,9 +302,23 @@ function App() {
                     required
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
                   />
                 </div>
+                <div className="flex">
+                  <span className="text-red-500 mr-2">*</span>
+                  <input
+                    type="number"
+                    placeholder="ご予約人数 / Number of Guests"
+                    required
+                    value={numberOfGuests}
+                    onChange={(e) => setNumberOfGuests(e.target.value)}
+                    className="px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
+                  />
+                </div>
+                {numGuestWarning && (
+                  <div className="text-red-500">{numGuestWarning}</div>
+                )}
                 <div className="flex">
                   <span className="text-red-500 mr-2">*</span>
                   <input
@@ -241,7 +327,7 @@ function App() {
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
                   />
                 </div>
                 <div className="flex">
@@ -252,7 +338,7 @@ function App() {
                     required
                     value={tel}
                     onChange={(e) => setTel(e.target.value)}
-                    className="px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
                   />
                 </div>
                 <textarea
