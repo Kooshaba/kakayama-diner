@@ -77,14 +77,21 @@ function App() {
   }, [selectedTime]);
 
   return (
-    <div className="p-4">
-      <Calendar
-        onChange={(value) => setDate(DateTime.fromJSDate(value as Date))}
-        value={date?.toJSDate()}
-        formatDay={(locale, date) => DateTime.fromJSDate(date).toFormat("dd")}
-        tileDisabled={disableDates}
-        locale={"ja"}
-      />
+    <div className="p-4 max-w-screen-sm mx-auto">
+      <h1 className="text-2xl font-bold mb-4 text-center">
+        カカヤマダイナー予約 / Kakayama Diner Reservations
+      </h1>
+
+      <div className="w-full">
+        <Calendar
+          className="mx-auto"
+          onChange={(value) => setDate(DateTime.fromJSDate(value as Date))}
+          value={date?.toJSDate()}
+          formatDay={(locale, date) => DateTime.fromJSDate(date).toFormat("dd")}
+          tileDisabled={disableDates}
+          locale={"ja"}
+        />
+      </div>
 
       <div className="h-4" />
 
