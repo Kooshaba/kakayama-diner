@@ -68,6 +68,34 @@ function App() {
           selectedTime,
         ],
       });
+
+      // Create a toast notification
+      const toast = document.createElement("div");
+      toast.textContent = `Reservation confirmed for ${date.toFormat(
+        "MMM dd"
+      )} @ ${selectedTime} / 予約が確定しました ${date.toFormat(
+        "yyyy年MM月dd日"
+      )} @ ${selectedTime}`;
+      toast.style.position = "fixed";
+      toast.style.top = "10px";
+      toast.style.left = "50%";
+      toast.style.transform = "translateX(-50%)";
+      toast.style.backgroundColor = "green";
+      toast.style.color = "white";
+      toast.style.padding = "10px 20px";
+      toast.style.borderRadius = "5px";
+      toast.style.zIndex = "1000";
+      toast.style.fontSize = "1.2rem";
+      toast.style.textAlign = "center";
+      document.body.appendChild(toast);
+
+      // Remove the toast after 15 seconds
+      setTimeout(() => {
+        document.body.removeChild(toast);
+      }, 15000);
+
+      // Reset form fields
+      setDate(null);
       setCurrentPage(0);
       setSelectedTime(null);
       setCommunicationConsent(false);
@@ -166,7 +194,7 @@ function App() {
                 {time}
               </div>
             ))}
-            <div>
+            <div className="w-full flex justify-around">
               <button
                 onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 0))}
                 disabled={currentPage === 0}
@@ -220,7 +248,7 @@ function App() {
                   <span className="text-red-500 mr-2">*</span>
                   <input
                     type="tel"
-                    placeholder="電話番号 / Phone Number"
+                    placeholder="電��番号 / Phone Number"
                     required
                     value={tel}
                     onChange={(e) => setTel(e.target.value)}
