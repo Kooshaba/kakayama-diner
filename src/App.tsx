@@ -227,7 +227,6 @@ function App() {
                 />
                 <textarea
                   placeholder="ほかにご要望があればご記入ください / Other Notes (if any)"
-                  required
                   className="px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={other}
                   onChange={(e) => setOther(e.target.value)}
