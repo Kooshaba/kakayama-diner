@@ -32,6 +32,7 @@ function App() {
   const [other, setOther] = useState("");
   const timesPerPage = 6;
   const formRef = useRef<HTMLFormElement | null>(null);
+  const timesRef = useRef<HTMLDivElement | null>(null);
 
   const submitDisabled = useMemo(
     () => !communicationConsent || !name || !email || !tel,
@@ -76,6 +77,12 @@ function App() {
     }
   }, [selectedTime]);
 
+  useEffect(() => {
+    if (date && timesRef.current) {
+      timesRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [date]);
+
   return (
     <div className="p-4 max-w-screen-sm mx-auto">
       <h1 className="text-2xl font-bold mb-4 text-center">
@@ -85,7 +92,12 @@ function App() {
       <div className="w-full">
         <Calendar
           className="mx-auto"
-          onChange={(value) => setDate(DateTime.fromJSDate(value as Date))}
+          onChange={(value) => {
+            setDate(DateTime.fromJSDate(value as Date));
+            setCurrentPage(0);
+            setSelectedTime(null);
+            setCommunicationConsent(false);
+          }}
           value={date?.toJSDate()}
           formatDay={(locale, date) => DateTime.fromJSDate(date).toFormat("dd")}
           tileDisabled={disableDates}
@@ -101,7 +113,7 @@ function App() {
             {" "}
             Viewing {date.toFormat("MMM dd")} / {date.toFormat("MM月dd日")}
           </h3>
-          <div>
+          <div ref={timesRef}>
             {paginatedTimeSlots.map((time) => (
               <div
                 key={time}
