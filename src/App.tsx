@@ -221,7 +221,7 @@ function App() {
                 ref={formRef}
                 className="flex flex-col gap-4"
               >
-                <h4>ご希望の時間 / Viewing Time: {selectedTime}</h4>
+                <h4>ご希望の時間 / Booking Time: {selectedTime}</h4>
                 <div className="flex">
                   <span className="text-red-500 mr-2">*</span>
                   <input
