@@ -68,6 +68,14 @@ function App() {
           selectedTime,
         ],
       });
+      setCurrentPage(0);
+      setSelectedTime(null);
+      setCommunicationConsent(false);
+      setName("");
+      setEmail("");
+      setTel("");
+      setAllergy("");
+      setOther("");
     }
   };
 
