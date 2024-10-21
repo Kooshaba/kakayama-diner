@@ -7,6 +7,7 @@ import {
 import { DateTime } from "luxon";
 import { Calendar } from "react-calendar";
 import "react-calendar/dist/Calendar.css";
+import { Link } from "react-router-dom";
 
 export function AdminPage() {
   const [allReservations, setAllReservations] = useState<
@@ -63,6 +64,10 @@ export function AdminPage() {
           Warning: You are connected to the development API!
         </div>
       )}
+
+      <Link to="/" className="bg-blue-500 text-white py-2 px-4 rounded mb-4">
+        Back to Main Page
+      </Link>
 
       <h1 className="text-2xl font-bold mb-4">Admin Page</h1>
 
