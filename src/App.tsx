@@ -106,6 +106,7 @@ function App() {
       luxonDate.weekday === 7 ||
         luxonDate.weekday === 1 ||
         luxonDate.weekday === 2 ||
+        luxonDate.hasSame(DateTime.now(), "day") || // Block the current day
         luxonDate < DateTime.now() ||
         blockedDays.find((blockedDay) => blockedDay.hasSame(luxonDate, "day"))
     );
