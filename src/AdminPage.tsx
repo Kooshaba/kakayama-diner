@@ -3,11 +3,22 @@ import {
   createAddedDay,
   createBlockedDay,
   fetchReservationsAndBlockedDates,
+  unblockDay,
 } from "./api";
 import { DateTime } from "luxon";
 import { Calendar } from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import { Link } from "react-router-dom";
+
+// Add this CSS at the top of the file or in your CSS file
+const calendarStyles = `
+  .blocked-day {
+    background-color: rgba(255, 0, 0, 0.1) !important;
+  }
+  .added-day {
+    background-color: rgba(0, 255, 0, 0.1) !important;
+  }
+`;
 
 export function AdminPage() {
   const [allReservations, setAllReservations] = useState<
@@ -19,8 +30,8 @@ export function AdminPage() {
       reservation_date: DateTime;
       reservation_time: DateTime;
       number_of_guests: number;
-      special_requests: string;
-      allergy: string;
+      special_requests?: string;
+      allergy?: string;
       communication_consent: boolean;
       created_at: DateTime;
     }[]
@@ -45,11 +56,20 @@ export function AdminPage() {
       setAllBlockedDays(data.blockedDays);
       const oneDayAgo = DateTime.now().minus({ days: 1 });
       const filteredReservations = data.reservations.filter(
-        (reservation: any) => reservation.reservation_date >= oneDayAgo
+        (reservation: { reservation_date: DateTime }) =>
+          reservation.reservation_date >= oneDayAgo
       );
       setAllReservations(filteredReservations);
+      setAllAddedDays(data.addedDays);
     });
   }, []);
+
+  const refreshDates = () => {
+    fetchReservationsAndBlockedDates().then((data) => {
+      setAllBlockedDays(data.blockedDays);
+      setAllAddedDays(data.addedDays);
+    });
+  };
 
   // Function to determine if a date should be disabled
   const disableDates = ({ date }: { date: Date }) => {
@@ -57,8 +77,39 @@ export function AdminPage() {
     return luxonDate < DateTime.now();
   };
 
+  const isDateBlocked = (date: DateTime) => {
+    return allBlockedDays.some((blockedDay) =>
+      blockedDay.block_date.hasSame(date, "day")
+    );
+  };
+
+  const getTileClassName = ({ date }: { date: Date }) => {
+    const luxonDate = DateTime.fromJSDate(date);
+
+    if (
+      allBlockedDays.some((blockedDay) =>
+        blockedDay.block_date.hasSame(luxonDate, "day")
+      )
+    ) {
+      return "blocked-day";
+    }
+
+    if (
+      allAddedDays.some((addedDay) =>
+        addedDay.added_date.hasSame(luxonDate, "day")
+      )
+    ) {
+      return "added-day";
+    }
+
+    return "";
+  };
+
   return (
     <div className="p-4 max-w-screen-sm mx-auto">
+      {/* Add the styles */}
+      <style>{calendarStyles}</style>
+
       {import.meta.env.MODE === "development" && (
         <div className="bg-yellow-300 text-yellow-800 p-4 rounded mb-4">
           Warning: You are connected to the development API!
@@ -99,10 +150,11 @@ export function AdminPage() {
               <strong>Guests:</strong> {reservation.number_of_guests}
             </p>
             <p>
-              <strong>Special Requests:</strong> {reservation.special_requests}
+              <strong>Special Requests:</strong>{" "}
+              {reservation.special_requests || "-"}
             </p>
             <p>
-              <strong>Allergy:</strong> {reservation.allergy}
+              <strong>Allergy:</strong> {reservation.allergy || "-"}
             </p>
             <p>
               <strong>Communication Consent:</strong>{" "}
@@ -122,6 +174,7 @@ export function AdminPage() {
           setSelectedBlockedDate(DateTime.fromJSDate(value as Date))
         }
         tileDisabled={disableDates}
+        tileClassName={getTileClassName}
         locale={"en"}
       />
 
@@ -129,16 +182,30 @@ export function AdminPage() {
         <button
           onClick={async () => {
             if (selectedBlockedDate) {
-              await createBlockedDay(selectedBlockedDate);
+              if (isDateBlocked(selectedBlockedDate)) {
+                // Unblock the date
+                await unblockDay(selectedBlockedDate);
+                refreshDates();
+              } else {
+                // Block the date
+                await createBlockedDay(selectedBlockedDate);
+                refreshDates();
+              }
 
               await fetchReservationsAndBlockedDates().then((data) => {
                 setAllBlockedDays(data.blockedDays);
               });
             }
           }}
-          className="px-4 py-2 text-white bg-red-500 rounded hover:bg-red-600"
+          className={`px-4 py-2 text-white rounded hover:opacity-90 ${
+            selectedBlockedDate && isDateBlocked(selectedBlockedDate)
+              ? "bg-green-500" // Green for unblock
+              : "bg-red-500" // Red for block
+          }`}
         >
-          Create Blocked Day
+          {selectedBlockedDate && isDateBlocked(selectedBlockedDate)
+            ? "Unblock Date"
+            : "Create Blocked Day"}
         </button>
 
         <button

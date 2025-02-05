@@ -95,19 +95,19 @@ function App() {
   const totalPages = Math.ceil(timeSlots.length / timesPerPage);
 
   // Function to determine if a date should be disabled
-  const disableDates = ({ date }: { date: Date }) => {
+  const disableDates = ({ date }: { date: Date }): boolean => {
     const luxonDate = DateTime.fromJSDate(date);
 
     if (addedDays.find((addedDay) => addedDay.hasSame(luxonDate, "day"))) {
       return false;
     }
 
-    return (
+    return Boolean(
       luxonDate.weekday === 7 ||
-      luxonDate.weekday === 1 ||
-      luxonDate.weekday === 2 ||
-      luxonDate < DateTime.now() ||
-      blockedDays.find((blockedDay) => blockedDay.hasSame(luxonDate, "day"))
+        luxonDate.weekday === 1 ||
+        luxonDate.weekday === 2 ||
+        luxonDate < DateTime.now() ||
+        blockedDays.find((blockedDay) => blockedDay.hasSame(luxonDate, "day"))
     );
   };
 
@@ -201,7 +201,9 @@ function App() {
             setCommunicationConsent(false);
           }}
           value={date?.toJSDate()}
-          formatDay={(locale, date) => DateTime.fromJSDate(date).toFormat("dd")}
+          formatDay={(_locale, date) =>
+            DateTime.fromJSDate(date).toFormat("dd")
+          }
           tileDisabled={disableDates}
           locale={"ja"}
         />
@@ -334,7 +336,7 @@ function App() {
                   <span className="text-red-500 mr-2">*</span>
                   <input
                     type="tel"
-                    placeholder="電��番号 / Phone Number"
+                    placeholder="電話番号 / Phone Number"
                     required
                     value={tel}
                     onChange={(e) => setTel(e.target.value)}
