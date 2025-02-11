@@ -203,6 +203,20 @@ export function isDateSelectable(date: DateTime): boolean {
   return date > today;
 }
 
+export async function deleteAddedDay(date: DateTime) {
+  const response = await fetch(`${API_BASE_URL}/added-days`, {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ date: date.toISO() }),
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to delete added day");
+  }
+}
+
 export {
   createReservation,
   fetchReservationsAndBlockedDates,

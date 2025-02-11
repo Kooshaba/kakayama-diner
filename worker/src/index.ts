@@ -18,7 +18,7 @@ export default {
 
 		const corsHeaders = {
 			'Access-Control-Allow-Origin': '*', // Allow all origins
-			'Access-Control-Allow-Methods': 'GET, POST, OPTIONS', // Allow specific methods
+			'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS', // Allow specific methods
 			'Access-Control-Allow-Headers': 'Content-Type', // Allow specific headers
 		};
 
@@ -106,9 +106,36 @@ export default {
 		if (path === '/added-days' && request.method === 'GET') {
 			// List all added days
 			const addedDays = await env.DB.prepare('SELECT * FROM added_days').all();
+			console.log('Added days rows:', addedDays);
 			return new Response(JSON.stringify(addedDays), {
 				headers: { ...corsHeaders, 'Content-Type': 'application/json' },
 			});
+		}
+
+		if (path === '/added-days' && request.method === 'DELETE') {
+			try {
+				const { date } = (await request.json()) as { date: string };
+
+				if (!date) {
+					return new Response('Date is required', {
+						status: 400,
+						headers: corsHeaders,
+					});
+				}
+
+				// Delete the added day from the database
+				await env.DB.prepare('DELETE FROM added_days WHERE added_date = ?').bind(date).run();
+
+				return new Response(JSON.stringify({ success: true }), {
+					headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+				});
+			} catch (error) {
+				console.error(`Error deleting added day:`, error);
+				return new Response('Failed to delete added day', {
+					status: 500,
+					headers: corsHeaders,
+				});
+			}
 		}
 
 		if (path === '/unblock-day' && request.method === 'POST') {

@@ -4,6 +4,7 @@ import {
   createBlockedDay,
   fetchReservationsAndBlockedDates,
   unblockDay,
+  deleteAddedDay,
 } from "./api";
 import { DateTime } from "luxon";
 import { Calendar } from "react-calendar";
@@ -80,6 +81,12 @@ export function AdminPage() {
   const isDateBlocked = (date: DateTime) => {
     return allBlockedDays.some((blockedDay) =>
       blockedDay.block_date.hasSame(date, "day")
+    );
+  };
+
+  const isDateAdded = (date: DateTime) => {
+    return allAddedDays.some((addedDay) =>
+      addedDay.added_date.hasSame(date, "day")
     );
   };
 
@@ -211,16 +218,21 @@ export function AdminPage() {
         <button
           onClick={async () => {
             if (selectedBlockedDate) {
-              await createAddedDay(selectedBlockedDate);
-
-              await fetchReservationsAndBlockedDates().then((data) => {
-                setAllAddedDays(data.addedDays);
-              });
+              if (isDateAdded(selectedBlockedDate)) {
+                // Delete the added day
+                await deleteAddedDay(selectedBlockedDate);
+              } else {
+                // Create a new added day
+                await createAddedDay(selectedBlockedDate);
+              }
+              refreshDates();
             }
           }}
           className="px-4 py-2 text-white bg-green-500 rounded hover:bg-green-600"
         >
-          Create Additional Day
+          {selectedBlockedDate && isDateAdded(selectedBlockedDate)
+            ? "Delete Additional Day"
+            : "Create Additional Day"}
         </button>
       </div>
 
