@@ -18,6 +18,48 @@ const timeSlots = [
   "15:00",
 ];
 
+function CustomCheckbox({
+  checked,
+  onChange,
+}: {
+  checked: boolean;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+}) {
+  return (
+    <div className="relative inline-block">
+      <input
+        type="checkbox"
+        id="communicationConsent"
+        required
+        checked={checked}
+        onChange={onChange}
+        className="sr-only"
+      />
+      <div
+        className={`w-8 h-8 border-2 rounded cursor-pointer transition-colors
+          ${
+            checked ? "bg-blue-500 border-blue-500" : "bg-white border-gray-300"
+          }`}
+        onClick={() =>
+          onChange({
+            target: { checked: !checked },
+          } as React.ChangeEvent<HTMLInputElement>)
+        }
+      >
+        {checked && (
+          <svg
+            className="w-6 h-6 text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+          >
+            <path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" />
+          </svg>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function App() {
   const [date, setDate] = useState<DateTime | null>(null);
   const [bookedTimeSlots, setBookedTimeSlots] = useState<
@@ -357,17 +399,13 @@ function App() {
                   onChange={(e) => setOther(e.target.value)}
                 ></textarea>
                 <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    id="communicationConsent"
-                    required
-                    className="mr-2"
+                  <CustomCheckbox
                     checked={communicationConsent}
                     onChange={(e) => setCommunicationConsent(e.target.checked)}
                   />
                   <label
                     htmlFor="communicationConsent"
-                    className="text-gray-700"
+                    className="ml-2 text-gray-700 cursor-pointer"
                   >
                     ご予約が完了した際にショートメッセージおよびメールでご連絡させていただきます。（ご予約を完了するにはこちらの項目へのチェックが必要です）
                   </label>
